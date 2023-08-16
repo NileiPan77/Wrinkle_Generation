@@ -51,10 +51,8 @@ class Skin:
 
         self.create_pores()
         self.create_edges()
-        # self.carve_wrinkles()
         self.parallel_carve_wrinkles(mp.cpu_count())
         print('intersection count:', len(self.intersections))
-        #self.draw_graph()
         self.draw_displacement_graph()
 
     def create_pores(self):
@@ -238,38 +236,7 @@ class Skin:
         p_cross = self.compute_p_cross(h_index)
 
         return max(0.0, dist_factor * (p_cont + (1 - self.a_cont) * p_pref - self.a_cross * p_cross))
-
-    def walk(self, start_node):
-        # initialize all edge weights to zero
-        weights = {edge: 0 for edge in self.graph.edges}
-
-        # current node to start walk
-        current_node = start_node
-
-        # TODO: iterate until a termination condition
-        while True:  # replace True with termination condition
-            neighbors = list(self.graph.neighbors(current_node))
-            if not neighbors:
-                break  # break if current node has no neighbors
-
-            probabilities = []
-            for neighbor in neighbors:
-                h = (current_node, neighbor)  # half-edge from current node to neighbor
-
-                P_h = self.p(h)  # probability of selecting the half-edge
-                probabilities.append(P_h)
-
-            # select the neighbor with the highest probability
-            selected_neighbor = neighbors[np.argmax(probabilities)]
-
-            # increase the weight of the edge to the selected neighbor
-            weights[(current_node, selected_neighbor)] += 1  # increment by 1, modify as needed
-
-            # continue walk from the selected neighbor
-            current_node = selected_neighbor
-
-        # assign weights to edges
-        nx.set_edge_attributes(self.graph, weights, 'weight')
+        
     def mellowmax(self, x):
         n_hat = 16
         beta = 20
@@ -475,31 +442,6 @@ class Skin:
         plt.imshow(displacement_map, cmap='gray_r')
         plt.show()
         return displacement_map
-
-    def draw_graph(self):
-        positions = nx.get_node_attributes(self.graph, 'position')
-        
-
-        plt.figure(figsize=(self.width, self.height), dpi=100)
-        # Draw nodes
-        nx.draw_networkx_nodes(self.graph, positions, node_color='black', node_size=0.01)
-        
-        
-        # Draw edges 
-        # nx.draw_networkx_edges(graph, positions, edge_color='lightgreen', width=1)
-        edge_colors = [self.graph[u][v]['weight'] for u,v in self.graph.edges()]
-        edge_width = ((np.array(edge_colors) + 1.0) ** 2 - 1)
-        # print weights
-        print(edge_width)
-        nx.draw_networkx_edges(self.graph, positions, edge_color=edge_width, edge_cmap=plt.cm.gray_r, width=0.01)
-
-        # no axis
-        plt.axis('off')
-        plt.margins(0)
-        # plt.show()
-        # save graph to file
-        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-        plt.savefig('graph.png', pad_inches=0)
 
 def main():
     skin = Skin(k = 5, avg_node_distance=0.15, \
